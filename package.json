@@ -1,0 +1,38 @@
+{
+  "name": "no-brakes-mountain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "纯代码生成的九关无刹车山路赛车",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "test": "node --test tests/*.test.js",
+    "desktop:dev": "npm run build && electron .",
+    "desktop:pack": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "build": {
+    "appId": "com.mountain.nobrakes",
+    "productName": "无刹车山道",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable"
+    }
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "vite": "^8.3.4"
+  }
+}

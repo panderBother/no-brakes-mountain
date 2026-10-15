@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#11251e" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2311251e'/%3E%3Cpath d='M5 26 13 6h6l8 20H5Zm8 0 2-7m1-4 1-5' fill='none' stroke='%23d7f06a' stroke-width='2'/%3E%3C/svg%3E" />
+    <meta name="description" content="九条山道，没有刹车。碰撞减速、时间能力和倒计时的纯代码 3D 赛车。" />
+    <title>无刹车山道 · NO BRAKES</title>
+  </head>
+  <body>
+    <canvas id="scene" aria-label="三维山路赛车场景"></canvas>
+    <div class="scene-shade"></div>
+    <header class="topbar">
+      <button class="brand" id="home-button" aria-label="返回主菜单">
+        <svg width="29" height="29" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M4 25 13 6h6l9 19H4Z" stroke="currentColor" stroke-width="1.6"/><path d="m13 25 2-6m1-4 1-5m2 15-2-6" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span>无刹车山道<small>NO BRAKES / MOUNTAIN RUN</small></span>
+      </button>
+      <div class="top-actions"><span class="version-mark">ESCALATION EDITION <i></i> 02</span><button id="sound-button" class="icon-button" aria-label="开启声音" title="开启声音">声音：关</button><button id="settings-button" class="icon-button" aria-label="打开设置">设置</button><button id="pause-button" class="icon-button hidden" aria-label="暂停">暂停 <kbd>ESC</kbd></button></div>
+    </header>
+
+    <main id="menu" class="menu">
+      <div class="intro">
+        <div class="eyebrow"><span class="tiny-line"></span> 九条山道 / 高难试炼</div>
+        <h1>没有刹车。<span>也没有余地。</span></h1>
+        <p class="intro-copy">更快的起跑，更猛烈的加速。<br />高速撞断护栏，自由掉头，在倒计时前冲线。</p>
+        <div class="start-row"><button id="start-button" class="primary-button">驶入山道 <span>↗</span></button><button id="guide-button" class="text-button">驾驶指南 <span>＋</span></button></div>
+        <div class="selected-info"><span id="selected-num">01 / 09</span><strong id="selected-name">山间公路</strong><p id="selected-subtitle">没有热身。第一段山路，就要全神贯注。</p><div><span id="selected-length">1.80 KM</span><span id="selected-time">33 SEC</span><span id="selected-best">尚无通关记录</span></div></div>
+        <div class="launch-spec"><div><small>起跑速度</small><strong id="selected-start-speed">150<span> KM/H</span></strong></div><div><small>持续加速度</small><strong id="selected-acceleration">+4.20<span> KM/H·S⁻¹</span></strong></div><div class="difficulty-stamp"><span>难度</span><b>极难</b></div></div>
+      </div>
+      <div class="landscape-caption"><span id="scene-coordinates">RIDGE 01 / ALPINE PASS</span><div><i></i> 前方山道，正在延伸</div></div>
+      <section class="level-select" aria-label="关卡选择"><div class="level-heading"><span>选择你的路线 <small>THE NINE ROADS</small></span><span id="challenge-progress">预览版九关均可试玩</span></div><div id="level-list" class="level-list"></div></section>
+      <footer class="menu-footer"><span><kbd>A</kbd><kbd>D</kbd> 转向 <i></i><kbd>SPACE</kbd> 慢动作 <i></i><kbd>ESC</kbd> 暂停</span><span>持续加速 / 高速破栏 / 超时爆炸</span></footer>
+    </main>
+
+    <section id="hud" class="hud hidden" aria-label="驾驶仪表">
+      <div class="race-top"><div><span id="race-number" class="race-number">01</span><div><small>EXTREME MOUNTAIN RUN</small><strong id="race-name">山间公路</strong></div></div><div class="progress-section"><span><b id="distance-value">0.00</b> / <b id="length-value">1.80</b> KM</span><div class="progress-rail"><div id="race-progress"></div></div></div></div>
+      <div id="race-warning" class="race-warning hidden"></div>
+      <div class="race-bottom"><div class="speed-gauge"><div class="gauge-caption">引擎持续加速 <span id="acceleration-text">+4.20</span></div><div><strong id="speed-value">150</strong><span>KM/H</span></div><div class="speed-rail"><div id="speed-progress"></div><i></i></div><small id="speed-note">150 KM/H 可撞断护栏</small></div><div class="race-resources"><div id="time-panel" class="time-panel"><small>剩余时间</small><strong id="time-value">00:33.0</strong></div><div class="rail-panel"><small>撞断护栏 <b id="broken-rails-value">0 段</b></small><span>碰撞轻微减速 · 车辆无碰撞损伤</span></div><div class="ability-panel"><div><small>时间能力</small><span id="ability-text">第 4 关解锁</span></div><div id="ability-charges"></div></div></div><div class="minimap-wrap"><canvas id="minimap" width="180" height="150" aria-label="道路预览小地图"></canvas><span>路线预览</span></div></div>
+      <div class="driving-hints"><span><kbd>A</kbd><kbd>D</kbd> 转向</span><span id="slow-hint"><kbd>SPACE</kbd> 时间减速</span><span><kbd>R</kbd> 重新开始</span></div>
+      <div class="touch-controls"><button id="touch-left" aria-label="向左转向">←</button><button id="touch-slow" aria-label="时间减速">慢动作</button><button id="touch-right" aria-label="向右转向">→</button></div>
+    </section>
+
+    <div id="countdown" class="countdown hidden" aria-live="polite"><span id="countdown-value">3</span><small>握紧方向，准备出发。</small></div>
+    <div id="slow-overlay" class="slow-overlay"></div>
+    <div id="hit-overlay" class="hit-overlay"></div>
+    <div id="toast" class="toast" role="status"></div>
+
+    <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-backdrop"></div><section class="modal-panel"><div id="modal-content"></div></section></div>
+    <div id="loading" class="loading"><span class="loading-mark">N / B</span><strong>正在生成山道</strong><small>赛车、道路与山脉由代码构建</small></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

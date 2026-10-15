@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "纯代码生成的九关无刹车山路赛车",
+  "description": "神秘大奖：纯代码生成的九关无刹车山路赛车",
   "main": "desktop/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
@@ -18,7 +18,7 @@
   },
   "build": {
     "appId": "com.mountain.nobrakes",
-    "productName": "无刹车山道",
+    "productName": "神秘大奖",
     "directories": {
       "output": "release"
     },

@@ -20,3 +20,31 @@
 
 /* Breakthrough rules: collisions no longer damage the vehicle. */
 .rail-panel{margin-top:14px}.rail-panel small{display:flex;justify-content:space-between;font-size:9px;color:#c2d0b9}.rail-panel b{font:11px var(--mono);color:var(--accent)}.rail-panel>span{display:block;margin-top:8px;font-size:8px;color:#a7b79e}.speed-gauge.danger strong,.speed-gauge.danger>small{color:#d9ef8b}
+
+/* Mystery prize: extend the existing forest palette and compact result panel. */
+.start-row{flex-wrap:wrap;column-gap:22px;row-gap:0}
+.modal-panel h2,.modal-panel p,.clear-progress{text-wrap:pretty}
+.clear-progress{margin:0 0 22px}
+.clear-progress>strong{display:block;font-size:19px;line-height:1.5;color:var(--accent);font-weight:550}
+.clear-progress>span{display:block;font-size:12px;line-height:1.8;color:#f2f4eb;margin-top:6px}
+.clear-markers{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:5px;margin-top:16px}
+.clear-markers i{font:10px var(--mono);font-style:normal;text-align:center;padding:9px 0;border:1px solid var(--line);border-radius:3px;color:#b9c5bd}
+.clear-markers i.cleared{color:#18271c;background:var(--accent);border-color:var(--accent)}
+.grand-prize{padding:22px 0 24px;margin:0 0 20px;border-block:1px solid rgba(217,239,139,.35)}
+.grand-prize>span{font-size:10px;letter-spacing:3px;color:var(--accent)}
+.grand-prize>strong{display:block;font-family:inherit;font-size:clamp(27px,4.5vw,38px);font-weight:550;font-variant-numeric:tabular-nums;line-height:1.45;color:#f2f4eb;margin:8px 0 14px;overflow-wrap:anywhere}
+.modal-panel .grand-prize p{margin:12px 0 0;font-size:13px;color:#dce4ce}
+.grand-prize>small{display:block;font-size:10px;line-height:1.8;color:#a6bb9c;margin-top:17px}
+.modal-panel:has(.grand-prize){max-width:600px}
+.modal-panel{scrollbar-width:thin;scrollbar-color:#64795f #132420}
+.modal-panel:has(.grand-prize) .result-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.modal-panel:has(.grand-prize) .result-stats strong{font-size:20px}
+.easter-egg{margin-top:18px;border-bottom:1px solid var(--line);padding-bottom:7px}
+.easter-egg .text-button{color:var(--accent);min-height:44px}
+.easter-egg .text-button:disabled{color:#b9c5bd}
+.modal-panel .easter-egg p{color:#efbe96;margin:4px 0 12px;font-size:12px}
+.celebration{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.celebration i{position:absolute;top:-24px;left:var(--x);width:7px;height:15px;border-radius:1px;background:var(--color);animation:prize-confetti 2.8s var(--delay) ease-in both;will-change:transform}
+@keyframes prize-confetti{0%{opacity:0;transform:translate3d(0,-4vh,0) rotate(0)}8%{opacity:1}85%{opacity:1}100%{opacity:0;transform:translate3d(var(--dx),105vh,0) rotate(var(--turn))}}
+@media(max-width:480px){.clear-progress>strong{font-size:17px}.clear-markers{gap:3px}.clear-markers i{font-size:9px;padding:8px 0}.grand-prize{padding-block:18px}.modal-panel:has(.grand-prize) .result-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.start-row{column-gap:15px}#prize-button{flex-basis:100%;text-align:left;padding-block:6px}.modal{padding:16px}}
+@media(prefers-reduced-motion:reduce){.celebration{display:none}}

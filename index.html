@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#11251e" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2311251e'/%3E%3Cpath d='M5 26 13 6h6l8 20H5Zm8 0 2-7m1-4 1-5' fill='none' stroke='%23d7f06a' stroke-width='2'/%3E%3C/svg%3E" />
-    <meta name="description" content="九条山道，没有刹车。碰撞减速、时间能力和倒计时的纯代码 3D 赛车。" />
-    <title>无刹车山道 · NO BRAKES</title>
+    <meta name="description" content="神秘大奖：九条山道，没有刹车。全部通关有神秘大奖，每关都有彩蛋与欢呼。" />
+    <title>神秘大奖 · MYSTERY PRIZE</title>
   </head>
   <body>
     <canvas id="scene" aria-label="三维山路赛车场景"></canvas>
@@ -14,17 +14,17 @@
     <header class="topbar">
       <button class="brand" id="home-button" aria-label="返回主菜单">
         <svg width="29" height="29" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M4 25 13 6h6l9 19H4Z" stroke="currentColor" stroke-width="1.6"/><path d="m13 25 2-6m1-4 1-5m2 15-2-6" stroke="currentColor" stroke-width="1.6"/></svg>
-        <span>无刹车山道<small>NO BRAKES / MOUNTAIN RUN</small></span>
+        <span>神秘大奖<small>MYSTERY PRIZE / NO BRAKES</small></span>
       </button>
-      <div class="top-actions"><span class="version-mark">ESCALATION EDITION <i></i> 02</span><button id="sound-button" class="icon-button" aria-label="开启声音" title="开启声音">声音：关</button><button id="settings-button" class="icon-button" aria-label="打开设置">设置</button><button id="pause-button" class="icon-button hidden" aria-label="暂停">暂停 <kbd>ESC</kbd></button></div>
+      <div class="top-actions"><span class="version-mark">MYSTERY PRIZE EDITION <i></i> 09</span><button id="sound-button" class="icon-button" aria-label="开启声音" title="开启声音">声音：关</button><button id="settings-button" class="icon-button" aria-label="打开设置">设置</button><button id="pause-button" class="icon-button hidden" aria-label="暂停">暂停 <kbd>ESC</kbd></button></div>
     </header>
 
     <main id="menu" class="menu">
       <div class="intro">
-        <div class="eyebrow"><span class="tiny-line"></span> 九条山道 / 高难试炼</div>
-        <h1>没有刹车。<span>也没有余地。</span></h1>
-        <p class="intro-copy">更快的起跑，更猛烈的加速。<br />高速撞断护栏，自由掉头，在倒计时前冲线。</p>
-        <div class="start-row"><button id="start-button" class="primary-button">驶入山道 <span>↗</span></button><button id="guide-button" class="text-button">驾驶指南 <span>＋</span></button></div>
+        <div class="eyebrow"><span class="tiny-line"></span> 九条山道 / 全部通关有神秘大奖</div>
+        <h1>神秘大奖。<span>等你通关。</span></h1>
+        <p class="intro-copy">没有刹车，只有越来越快的山道。<br />全部通关有神秘大奖，敢不敢跑到最后？</p>
+        <div class="start-row"><button id="start-button" class="primary-button">驶入山道 <span>↗</span></button><button id="guide-button" class="text-button">驾驶指南 <span>＋</span></button><button id="prize-button" class="text-button hidden">查看神秘大奖 <span>↗</span></button></div>
         <div class="selected-info"><span id="selected-num">01 / 09</span><strong id="selected-name">山间公路</strong><p id="selected-subtitle">没有热身。第一段山路，就要全神贯注。</p><div><span id="selected-length">1.80 KM</span><span id="selected-time">33 SEC</span><span id="selected-best">尚无通关记录</span></div></div>
         <div class="launch-spec"><div><small>起跑速度</small><strong id="selected-start-speed">150<span> KM/H</span></strong></div><div><small>持续加速度</small><strong id="selected-acceleration">+4.20<span> KM/H·S⁻¹</span></strong></div><div class="difficulty-stamp"><span>难度</span><b>极难</b></div></div>
       </div>

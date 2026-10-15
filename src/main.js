@@ -4,11 +4,12 @@ import { GameSimulation } from './core.js';
 import { MountainRenderer } from './renderer.js';
 import { SynthAudio } from './audio.js';
 import { SteeringInput } from './controls.js';
+import { PlayTimeTracker, campaignProgress, investmentText, EASTER_EGGS } from './progress.js';
 
 const $ = (id) => document.getElementById(id);
 const initialSettings = { muted: false, volume: 0.35, quality: 'high', shake: true };
 const SAVE_KEY = 'mountain-no-brakes-escalation-v5';
-let saved = { best: {}, records: {}, attempts: {}, completed: [], settings: initialSettings };
+let saved = { best: {}, records: {}, attempts: {}, completed: [], playTimeMs: 0, settings: initialSettings };
 try {
   const value = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   if (value && typeof value === 'object') {
@@ -17,11 +18,17 @@ try {
       records: value.records && typeof value.records === 'object' ? value.records : {},
       attempts: value.attempts && typeof value.attempts === 'object' ? value.attempts : {},
       completed: Array.isArray(value.completed) ? value.completed.filter((id) => LEVELS.some((l) => l.id === id)) : [],
+      playTimeMs: value.playTimeMs,
       settings: { ...initialSettings, ...value.settings },
     };
   }
 } catch { /* Corrupt or unavailable storage does not prevent playing. */ }
-const persist = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch { /* Session remains playable. */ } };
+saved.completed = campaignProgress(saved.completed).completed;
+const playTime = new PlayTimeTracker(saved.playTimeMs);
+const persist = () => {
+  saved.playTimeMs = playTime.totalMs;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch { /* Session remains playable. */ }
+};
 const audio = new SynthAudio();
 audio.setVolume(saved.settings.volume);
 audio.setMuted(saved.settings.muted);
@@ -31,6 +38,8 @@ let selectedId = 1;
 let inMenu = true;
 let modalKind = null;
 let toastTimer;
+let celebrationTimer;
+let lastTimeSave = performance.now();
 let lastStatus = 'ready';
 let lastTick = null;
 let lastTime = performance.now();
@@ -45,8 +54,37 @@ const touch = { left: false, right: false, slow: false };
 const two = (n) => String(n).padStart(2, '0');
 const timeText = (seconds, decimals = true) => {
   const s = Math.max(0, Number(seconds) || 0);
-  return `${two(Math.floor(s / 60))}:${two(Math.floor(s % 60))}${decimals ? `.${Math.floor((s % 1) * 10)}` : ''}`;
+  const tenths = Math.floor(s * 10 + 1e-7);
+  return `${two(Math.floor(tenths / 600))}:${two(Math.floor(tenths / 10) % 60)}${decimals ? `.${tenths % 10}` : ''}`;
 };
+
+function accountTime(now = performance.now(), active = !inMenu && !document.hidden && document.hasFocus()
+  && ['countdown', 'running'].includes(simulation?.state.status)) {
+  playTime.checkpoint(now, active);
+}
+
+function celebrate(grand = false) {
+  const shower = document.createElement('div');
+  shower.className = 'celebration';
+  shower.setAttribute('aria-hidden', 'true');
+  const colors = ['#d9ef8b', '#f2f4eb', '#efbe96'];
+  shower.innerHTML = Array.from({ length: grand ? 48 : 30 }, (_, i) => `<i style="--x:${(i * 37 + 7) % 100}%;--dx:${(i * 53) % 240 - 120}px;--turn:${i * 73}deg;--delay:${(i % 8) * 0.06}s;--color:${colors[i % colors.length]}"></i>`).join('');
+  $('modal').append(shower);
+  clearTimeout(celebrationTimer);
+  celebrationTimer = setTimeout(() => shower.remove(), 3400);
+  audio.play(grand ? 'grand-prize' : 'cheer');
+}
+
+function prizeMarkup() {
+  return `<div class="grand-prize"><span>神秘大奖 · 现已揭晓</span><p>你成功浪费了</p><strong>${investmentText(playTime.totalMs)}</strong><p>没错，这就是你的神秘大奖。<br />九条山道见证了你的坚持，掌声归你！</p><small>累计本机驾驶时间，含倒数与失败重试；暂停、后台和菜单不计。<br />从本次更新起记录，保存在当前浏览器。</small></div>`;
+}
+
+function showGrandPrize() {
+  if (!campaignProgress(saved.completed).allCleared) return;
+  openModal('prize', `<div class="modal-label">ALL NINE ROADS / GRAND PRIZE</div><h2 id="modal-title">恭喜通关！</h2>${prizeMarkup()}<div class="modal-buttons"><button class="primary-button" id="prize-close">收下这份大奖 <span>→</span></button></div>`);
+  $('prize-close').onclick = closeModal;
+  celebrate(true);
+}
 
 function showToast(message) {
   $('toast').textContent = message;
@@ -62,7 +100,9 @@ function updateSoundButton() {
 
 function buildLevelList() {
   $('level-list').innerHTML = LEVELS.map((l) => `<button class="level-card${l.id === selectedId ? ' active' : ''}" data-level="${l.id}" aria-label="试玩第 ${l.id} 关 ${l.name}" aria-pressed="${l.id === selectedId}"><span class="level-n">${two(l.id)}</span>${saved.completed.includes(l.id) ? '<span class="level-cleared">✓</span>' : ''}${routePreview(l)}<span class="level-name">${l.name}</span><span class="level-detail">${(l.length / 1000).toFixed(2)} KM · ${l.timeLimit} S</span></button>`).join('');
-  $('challenge-progress').textContent = saved.completed.length ? `已通关 ${new Set(saved.completed).size} / 9 · 全关可试玩` : '预览版九关均可试玩';
+  const progress = campaignProgress(saved.completed);
+  $('challenge-progress').textContent = progress.allCleared ? '九关全部通过 · 神秘大奖已解锁' : `已通过 ${progress.count} 关 · 还差 ${progress.remaining} 关`;
+  $('prize-button').classList.toggle('hidden', !progress.allCleared);
   $('level-list').querySelectorAll('button').forEach((button) => button.addEventListener('click', () => selectLevel(Number(button.dataset.level))));
 }
 
@@ -115,6 +155,7 @@ function clearInput() {
 }
 
 async function startRace() {
+  accountTime();
   closeModal();
   clearInput();
   inMenu = false;
@@ -124,6 +165,7 @@ async function startRace() {
   $('pause-button').classList.remove('hidden');
   simulation.restart();
   simulation.start();
+  accountTime();
   renderer.loadTrack(simulation.track);
   saved.attempts[selectedId] = (saved.attempts[selectedId] || 0) + 1;
   persist();
@@ -135,9 +177,12 @@ async function startRace() {
 }
 
 function returnMenu() {
+  accountTime();
   closeModal();
   clearInput();
   inMenu = true;
+  accountTime();
+  persist();
   document.body.classList.remove('in-race');
   $('menu').classList.remove('hidden');
   $('hud').classList.add('hidden');
@@ -147,21 +192,29 @@ function returnMenu() {
 }
 
 function openModal(kind, html) {
+  clearTimeout(celebrationTimer);
+  $('modal').querySelector('.celebration')?.remove();
   modalKind = kind;
   $('modal-content').innerHTML = html;
   $('modal').classList.remove('hidden');
+  $('modal-content').parentElement.scrollTop = 0;
   const first = $('modal-content').querySelector('button,input,select');
   if (first) first.focus({ preventScroll: true });
 }
 
 function closeModal() {
+  clearTimeout(celebrationTimer);
+  $('modal').querySelector('.celebration')?.remove();
   $('modal').classList.add('hidden');
   modalKind = null;
 }
 
 function pauseRace() {
   if (inMenu || !['running', 'countdown', 'paused'].includes(simulation.state.status)) return;
+  accountTime();
   if (simulation.state.status !== 'paused') simulation.pause();
+  accountTime();
+  persist();
   clearInput();
   openModal('pause', `<div class="modal-label">TAKE A BREATH</div><h2 id="modal-title">山道等你片刻。</h2><p>倒计时已暂停。准备好了，就继续向终点出发。</p><div class="modal-buttons"><button class="primary-button" id="resume-button">继续驾驶 <span>→</span></button><button class="secondary-button" id="restart-button">重新开始</button><button class="secondary-button" id="back-button">返回选关</button></div>`);
   $('resume-button').onclick = resumeRace;
@@ -173,12 +226,13 @@ function resumeRace() {
   closeModal();
   clearInput();
   simulation.resume();
+  accountTime();
   lastTime = performance.now();
 }
 
 function showGuide() {
   const running = !inMenu && ['running', 'countdown'].includes(simulation.state.status);
-  if (running) simulation.pause();
+  if (running) { accountTime(); simulation.pause(); accountTime(); persist(); }
   openModal('guide', `<div class="modal-label">A DRIVER'S FIELD GUIDE</div><h2 id="modal-title">先判断，再转向。</h2><ul class="guide-list"><li><b>A / D</b><span>高起速、强加速。提前观察大弯，用短按轻柔修正，长按逐渐加大转向。普通山路较宽，隧道入口会渐渐收窄。</span></li><li><b>掉头</b><span>普通道路宽约 26–28 米。先靠道路一侧，再持续转向完成掉头；逆向会远离终点，倒计时照常流逝。窄隧道和桥面不适合掉头。</span></li><li><b>随机路障</b><span>每次出发都有不同障碍；前方生成的路障会占据部分车道，提前选择留出的通道。</span></li><li><b>护栏 / 路障</b><span>撞护栏仅降低约 3 km/h，撞路障约 4 km/h；碰撞不扣耐久，也不会撞坏车辆。</span></li><li><b>${simulation.level.railBreakSpeed || 150} KM/H</b><span>达到此速度后可撞断室外护栏，碎裂缺口会保留。不要从缺口冲进山谷；隧道墙体不会被撞开。</span></li><li><b>SPACE</b><span>第 4 关起限次慢动作，每次最多 2 秒；倒计时照常流逝，桥前减速过多会跳不过去。</span></li><li><b>倒计时</b><span>理想时间加紧缩缓冲。归零前没过终点，车辆爆炸。暂停不扣时间。</span></li></ul><div class="modal-buttons"><button class="primary-button" id="guide-close">开始挑战 <span>→</span></button></div>`);
   $('guide-close').onclick = () => { closeModal(); if (running) resumeRace(); };
 }
@@ -187,7 +241,7 @@ function showSettings() {
   const previousModal = modalKind;
   const running = !inMenu && ['running', 'countdown'].includes(simulation.state.status);
   const wasPaused = !inMenu && simulation.state.status === 'paused';
-  if (running) { simulation.pause(); clearInput(); }
+  if (running) { accountTime(); simulation.pause(); accountTime(); persist(); clearInput(); }
   openModal('settings', `<div class="modal-label">MAKE IT YOUR DRIVE</div><h2 id="modal-title">驾驶设置</h2><label class="settings-row"><span>声音</span><input type="checkbox" id="setting-sound" ${saved.settings.muted ? '' : 'checked'} /></label><label class="settings-row"><span>音量</span><input type="range" min="0" max="1" step="0.05" value="${saved.settings.volume}" id="setting-volume" /></label><label class="settings-row"><span>画面质量</span><select id="setting-quality"><option value="high" ${saved.settings.quality === 'high' ? 'selected' : ''}>清晰</option><option value="low" ${saved.settings.quality === 'low' ? 'selected' : ''}>流畅</option></select></label><label class="settings-row"><span>镜头震动</span><input type="checkbox" id="setting-shake" ${saved.settings.shake ? 'checked' : ''} /></label><div class="modal-buttons"><button id="settings-close" class="primary-button">保存并返回 <span>→</span></button></div>`);
   $('setting-sound').onchange = async (e) => { saved.settings.muted = !e.target.checked; audio.setMuted(saved.settings.muted); if (!saved.settings.muted) await audio.enable(); updateSoundButton(); persist(); };
   $('setting-volume').oninput = (e) => { saved.settings.volume = Number(e.target.value); audio.setVolume(saved.settings.volume); persist(); };
@@ -209,15 +263,28 @@ function showResult() {
       saved.best[selectedId] = state.elapsed;
       saved.records[selectedId] = { elapsed: state.elapsed, seed: simulation.track.runSeed, rulesVersion: 5 };
     }
-    if (!saved.completed.includes(selectedId)) saved.completed.push(selectedId);
-    persist();
+    saved.completed = campaignProgress([...saved.completed, selectedId]).completed;
   }
+  accountTime();
+  persist();
+  const progress = campaignProgress(saved.completed, selectedId);
+  const grand = win && progress.allCleared;
   const failLabels = { timeout: '倒计时归零，车辆爆炸。', cliff: '驶出道路，坠入山谷。撞断护栏后要及时修正方向。', gap: '未能跨过断桥。' };
   const reason = failLabels[state.failCause] || state.failReason || '这次没能驶过终点，再试一次。';
-  openModal('result', `<div class="modal-label">${win ? 'ROAD CONQUERED / ' + two(selectedId) : 'THE MOUNTAIN WINS THIS TIME'}</div><h2 id="modal-title">${win ? (selectedId === 9 ? '九条山道，全部征服。' : '驶过终点。') : (state.failCause === 'timeout' ? '时间到了。' : '下一次，走得更远。')}</h2><p>${win ? (record ? '新的个人最佳。' : '稳稳通过，这条山道已有你的车辙。') : reason}</p><div class="result-stats"><div><small>本次用时</small><strong>${timeText(state.elapsed)}</strong></div><div><small>${win ? '剩余时间' : '路线进度'}</small><strong>${win ? timeText(state.remaining) : Math.min(100, state.s / simulation.level.length * 100).toFixed(0) + '%'}</strong></div><div><small>碰撞次数</small><strong>${state.collisions || 0}</strong></div><div><small>撞断护栏</small><strong>${state.brokenRails || 0} 段</strong></div></div><div class="modal-buttons"><button class="primary-button" id="result-primary">${win && selectedId < 9 ? '下一条山道' : '再次出发'} <span>→</span></button><button class="secondary-button" id="result-back">返回选关</button>${win && selectedId < 9 ? '<button class="text-button" id="result-retry">重玩本关</button>' : ''}</div>`);
-  $('result-primary').onclick = () => { if (win && selectedId < 9) selectLevel(selectedId + 1); startRace(); };
+  openModal('result', `<div class="modal-label">${grand ? 'ALL NINE ROADS / GRAND PRIZE' : win ? 'ROAD CONQUERED / ' + two(selectedId) : 'THE MOUNTAIN WINS THIS TIME'}</div><h2 id="modal-title">${grand ? '恭喜通关！' : win ? '好耶，驶过终点！' : state.failCause === 'timeout' ? '时间到了。' : '下一次，走得更远。'}</h2>${win ? `<div class="clear-progress" role="status"><strong>已通过 ${progress.count} 关，还差 ${progress.remaining} 关</strong><span>加油骚年！！！${grand ? '全场起立，欢呼属于你！' : '山道观众为你欢呼！'}</span><div class="clear-markers" aria-hidden="true">${LEVELS.map(l => `<i class="${progress.completed.includes(l.id) ? 'cleared' : ''}">${two(l.id)}</i>`).join('')}</div></div>${grand ? prizeMarkup() : ''}` : ''}<p>${win ? record ? '新的个人最佳。' : '稳稳通过，这条山道已有你的车辙。' : reason}</p><div class="result-stats"><div><small>${win ? '本关通关用时' : '本次驾驶用时'}</small><strong>${timeText(state.elapsed)}</strong></div><div><small>${win ? '剩余时间' : '路线进度'}</small><strong>${win ? timeText(state.remaining) : Math.min(100, state.s / simulation.level.length * 100).toFixed(0) + '%'}</strong></div><div><small>碰撞次数</small><strong>${state.collisions || 0}</strong></div><div><small>撞断护栏</small><strong>${state.brokenRails || 0} 段</strong></div></div>${win ? `<div class="easter-egg"><button id="egg-button" class="text-button" aria-expanded="false" aria-controls="egg-message">敲开本关彩蛋 <span>＋</span></button><p id="egg-message" class="hidden" role="status">${EASTER_EGGS[grand ? 8 : Math.min(7, progress.count - 1)]}</p></div>` : ''}<div class="modal-buttons"><button class="primary-button" id="result-primary">${win && !grand ? `挑战第 ${progress.nextId} 关` : '再次出发'} <span>→</span></button><button class="secondary-button" id="result-back">返回选关</button>${win && !grand ? '<button class="text-button" id="result-retry">重玩本关</button>' : ''}</div>`);
+  $('result-primary').onclick = () => { if (win && !grand) selectLevel(progress.nextId); startRace(); };
   $('result-back').onclick = returnMenu;
   if ($('result-retry')) $('result-retry').onclick = startRace;
+  if (win) {
+    $('egg-button').onclick = () => {
+      $('egg-button').setAttribute('aria-expanded', 'true');
+      $('egg-button').textContent = '彩蛋已打开';
+      $('egg-button').disabled = true;
+      $('egg-message').classList.remove('hidden');
+      audio.play('finish');
+    };
+    celebrate(grand);
+  }
 }
 
 function drawMap() {
@@ -288,10 +355,13 @@ function updateHUD(state) {
 function frame(now) {
   const dt = Math.max(0, (now - lastTime) / 1000);
   lastTime = now;
+  accountTime(now);
   const rawSteer = (keys.has('KeyD') || keys.has('ArrowRight') || touch.right ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') || touch.left ? 1 : 0);
   input.steer = steeringInput.update(rawSteer, dt);
   input.slow = keys.has('Space') || touch.slow;
   if (!inMenu) simulation.update(dt, input);
+  accountTime(now);
+  if (now - lastTimeSave >= 5000) { persist(); lastTimeSave = now; }
   const state = simulation.state;
   const events = simulation.consumeEvents();
   events.forEach((event) => {
@@ -346,10 +416,12 @@ document.addEventListener('keydown', (e) => {
   if (e.code === 'Enter' && inMenu && !modalKind && e.target.tagName !== 'BUTTON') startRace();
 });
 document.addEventListener('keyup', (e) => keys.delete(e.code));
-document.addEventListener('visibilitychange', () => { if (document.hidden && !inMenu && ['running', 'countdown'].includes(simulation.state.status)) pauseRace(); });
-window.addEventListener('blur', () => { clearInput(); if (!inMenu && ['running', 'countdown'].includes(simulation.state.status)) pauseRace(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { accountTime(performance.now(), false); persist(); if (!inMenu && ['running', 'countdown'].includes(simulation.state.status)) pauseRace(); } });
+window.addEventListener('blur', () => { accountTime(performance.now(), false); persist(); clearInput(); if (!inMenu && ['running', 'countdown'].includes(simulation.state.status)) pauseRace(); });
+window.addEventListener('pagehide', () => { accountTime(performance.now(), false); persist(); });
 window.addEventListener('resize', () => renderer?.resize());
 $('start-button').onclick = startRace;
+$('prize-button').onclick = showGrandPrize;
 $('home-button').onclick = () => { if (!inMenu) returnMenu(); };
 $('guide-button').onclick = showGuide;
 $('pause-button').onclick = pauseRace;

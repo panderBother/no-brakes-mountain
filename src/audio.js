@@ -126,14 +126,14 @@ export class SynthAudio {
     oscillator.stop(start + duration + 0.02);
   }
 
-  noise(duration, gain, frequency, endFrequency = frequency) {
+  noise(duration, gain, frequency, endFrequency = frequency, delay = 0, filterType = 'lowpass') {
     const ctx = this.context;
-    const start = ctx.currentTime;
+    const start = ctx.currentTime + delay;
     const source = ctx.createBufferSource();
     const filter = ctx.createBiquadFilter();
     const envelope = ctx.createGain();
     source.buffer = this.noiseBuffer;
-    filter.type = 'lowpass';
+    filter.type = filterType;
     filter.frequency.setValueAtTime(frequency, start);
     filter.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
     envelope.gain.setValueAtTime(0, start);
@@ -180,6 +180,19 @@ export class SynthAudio {
         [523.25, 659.25, 783.99, 1046.5].forEach((note, index) => {
           this.tone(note, index === 3 ? 0.6 : 0.25, index * 0.12, 0.065, 'triangle');
         });
+        break;
+      case 'grand-prize':
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((note, i) => {
+          this.tone(note, 0.55, i * 0.14, 0.045, 'triangle');
+        });
+        this.play('cheer');
+        break;
+      case 'cheer':
+        // Synthesized crowd wash, applause bursts and rising whistles; no samples.
+        this.noise(1.8, 0.045, 850, 1400, 0, 'bandpass');
+        for (let i = 0; i < 14; i++) this.noise(0.09, 0.035, 2800, 1100, i * 0.105);
+        this.tone(720, 0.45, 0.18, 0.018, 'sine', 1120);
+        this.tone(880, 0.55, 0.48, 0.015, 'sine', 1360);
         break;
       case 'tick':
         this.tone(880, 0.08, 0, 0.055);

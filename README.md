@@ -1,16 +1,22 @@
-# 无刹车山道
+# 神秘大奖
 
 纯代码的 3D 山路赛车网页原型。赛车、蜿蜒道路、山体、树木、护栏、天气和爆炸由代码生成，音效通过 Web Audio 合成，无需模型、贴图或音频素材。使用 JavaScript + Three.js + Vite；Three.js 随本地构建打包，运行时不依赖 CDN。技术路线已从原计划的 Godot 调整为 Web 技术，后续通过 Electron 包装桌面版。
 
 ## 在线试玩与发布
 
-- 在线试玩：[无刹车山道](https://panderbother.github.io/no-brakes-mountain/)
+- 在线试玩：[神秘大奖](https://panderbother.github.io/no-brakes-mountain/)
 - 源码：[panderBother/no-brakes-mountain](https://github.com/panderBother/no-brakes-mountain)
 - 构建与部署：[GitHub Actions](https://github.com/panderBother/no-brakes-mountain/actions/workflows/deploy-pages.yml)
 
 推送到 `main` 后，GitHub Actions 使用 Node.js 22 执行 `npm ci`、`npm test` 和 `npm run build`，全部成功后将 `dist/` 部署到 GitHub Pages。拉取请求只做测试和构建。仓库的 Pages 发布来源设为 GitHub Actions；具体配置见 [GitHub 官方说明](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages)。构建使用相对资源路径，支持仓库子目录和后续桌面壳。
 
 建议使用电脑浏览器和键盘试玩；手机可使用画面中的触控方向键。游戏需要浏览器支持 WebGL。
+
+## 神秘大奖与通关彩蛋
+
+全部通过九个不同关卡即可揭晓神秘大奖。每关结算显示通关用时、“已通过几关，还差几关，加油骚年！！！”、进度标记和可打开的彩蛋，并播放程序合成的欢呼掌声、飘落短暂纸屑；静音和减少动态效果设置继续生效。选关顺序自由，单独过第九关不会触发全通奖励，重复通关也不会重复增加通过关数。
+
+最终揭晓：“恭喜通关！你成功浪费了……”并展示累计真实驾驶时间，包含起跑倒数及所有失败、重试；慢动作仍按真实时间统计，暂停、菜单、结算、后台和关闭网页期间不计时。时间每五秒及暂停、结算、离开时保存到本机浏览器，刷新后继续累计。旧版没有记录累计时间，因此从这次更新开始统计，不补造历史时间；清除浏览器数据会丢失本机记录。已全通后可从菜单“查看神秘大奖”再次查看。
 
 ## 运行网页版
 
@@ -72,7 +78,7 @@ npm run desktop:pack
 
 ## 验证与文档
 
-`npm test`：28项通过，含72条多种子合法参考路线（后期允许按规则轻碰或破栏，不宣称全部无碰撞）；`npm run build`成功。已检查实际WebGL场景、暂停/慢动作/爆炸/重试，以及分段和显卡资源计数。旧版性能采样为历史记录；本版增加全九关起速/加速度均提高且后段增幅递增检查。V0.7增加了短按/长按/松开/反打、渐进转向掉头及不避障中线策略超时检查，保留破栏、逆向加载、超时爆炸和多种子可行性测试。
+`npm test`：34项通过，新增全通判定、重复关卡去重、真实累计时间及跨刷新保存等6项检查；原28项含72条多种子合法参考路线（后期允许按规则轻碰或破栏，不宣称全部无碰撞）；`npm run build`成功。已检查实际WebGL场景、暂停/慢动作/爆炸/重试，以及分段和显卡资源计数。旧版性能采样为历史记录；本版增加全九关起速/加速度均提高且后段增幅递增检查。V0.7增加了短按/长按/松开/反打、渐进转向掉头及不避障中线策略超时检查，保留破栏、逆向加载、超时爆炸和多种子可行性测试。
 
 - 需求与参数：`docs/无刹车山路赛车需求与开发计划.md`
 - 测试范围与限制：`docs/网页版测试记录.md`

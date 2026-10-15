@@ -23,7 +23,7 @@ function createWindow() {
     height: 900,
     minWidth: 900,
     minHeight: 620,
-    title: '无刹车山道',
+    title: '神秘大奖',
     backgroundColor: '#121d24',
     show: false,
     autoHideMenuBar: true,
